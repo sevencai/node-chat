@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>chatroom</title>
+</head>
+<body>
+	<header>
+		<h3>基于socket.io的聊天室</h3>
+		<p id="notice"></p>
+	</header>
+	<div class="login">
+		<h3>聊天前请先登陆</h3>
+		<input type="text" placeholder="输入用户名" id="username">
+		<input type="submit" value="登陆" onclick="CHAT.submit()">
+	</div>
+	<div id="main" style="display:none;">
+		<aside>
+			<p>在线用户列表</p>
+			<ul id="onlineUsers">
+			</ul>
+		</aside>
+		<section>
+			<p>消息列表</p>
+			<ul id="messageList">
+			</ul>
+		</section>
+	</div>
+	<footer id="footer" style="display:none">
+		<textarea name="" id="message" cols="30" rows="10"></textarea>
+		<select name="" id="selectUserList">
+			<option value="">所有人</option>
+		</select>
+		<input type="submit" value="提交" onclick="CHAT.sendMessage()">
+	</footer>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		(function(){			
+			window.CHAT = {
+				uid:null,
+				username:null,
+				socket:null,
+				submit:function(){
+					var username = document.getElementById('username').value;
+					if(username!==""){
+						this.init(username);
+						this.socket.emit('login',{uid:this.uid,username:this.username});
+
+						this.initStyle();
+					}							
+				},
+				initStyle:function(){
+					var main = document.getElementById('main');
+					var footer = document.getElementById('footer');
+
+					main.style.display = 'block';
+					footer.style.display = 'block';
+				},
+				getUid:function(){
+					return +new Date();
+				},
+				sendMessage:function(){
+					var message = document.getElementById('message').value;
+					var select = document.getElementById('selectUserList');
+					var selectIndex = select.selectedIndex;
+					var optionValue = select.options[selectIndex].value;
+					var optionText = select.options[selectIndex].text;
+					if(message != ""){						
+						this.socket.emit('message',{uid:this.uid,username:this.username,message:message,to:optionValue,toUser:optionText});
+					}					
+				},
+				createEleNode:function(ele,text){
+					var eleNode = document.createElement(ele);
+					var text = document.createTextNode(text);
+					eleNode.appendChild(text);
+					return eleNode;
+				},
+				updateUlist:function(data){
+					var onlineLists = document.getElementById("onlineUsers");
+					var str = "";
+					for(var i in data.onlineUsers){
+						str += "<li id='"+i+"'>"+data.onlineUsers[i]+"</li>";
+					}
+					onlineLists.innerHTML = str;
+				},
+				updateSelect:function(data){
+					var selectUserList = document.getElementById('selectUserList');
+					var str = "<option value='所有人'>所有人</option>";
+					for(var key in data.onlineUsers){
+						str += "<option value='"+key+"'>"+data.onlineUsers[key]+"</option>"
+					}
+					selectUserList.innerHTML = str;
+				},
+				updateNotice:function(msg){
+					var notice = document.getElementById('notice');
+					var node = this.createEleNode('li',msg)
+					notice.appendChild(node);
+				},	
+				appendMessage:function(data){
+					var messageList = document.getElementById("messageList");
+					var node = CHAT.createEleNode('li','用户'+data.username+"对"+data.toUser+"说："+data.message);			
+					console.log(node);
+					messageList.appendChild(node);
+				},			
+				init:function(username){
+					this.uid = this.getUid();
+					this.username = username;
+					this.socket = io.connect();
+
+					this.socket.on('login',function(data){
+						//当用户登陆的时候，更新列表
+						CHAT.updateUlist(data);
+						CHAT.updateSelect(data);
+						CHAT.updateNotice(data.userObj.username+"进入了聊天室");
+					});					
+
+					this.socket.on('logout',function(data){
+						//当用户退出时，更新列表
+						CHAT.updateUlist(data);
+						CHAT.updateSelect(data);
+						CHAT.updateNotice(CHAT.username+"退出了聊天室");			
+					});
+
+					this.socket.on('message',function(data){
+						CHAT.appendMessage(data);
+					});
+					this.socket.on('to'+CHAT.uid,function(data){
+						CHAT.appendMessage(data);
+					})
+
+					this.socket.on('disconnect',function(){
+						CHAT.updateNotice("服务器断开连接");
+					});
+				}
+			}
+		})()
+	</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "node-chat",
+  "version": "1.0.0",
+  "description": "chatroom based on WebSocket",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Christine95/js-project.git"
+  },
+  "keywords": [
+    "chatroom",
+    "node"
+  ],
+  "author": "Seven",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Christine95/js-project/issues"
+  },
+  "homepage": "https://github.com/Christine95/js-project#readme",
+  "dependencies": {
+    "express": "^4.13.4",
+    "socket.io": "^1.4.5"
+  }
+}
